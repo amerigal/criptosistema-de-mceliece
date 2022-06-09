@@ -247,4 +247,44 @@ class CodigoGoppaBinario():
                 palabra[i] +=1
         
         return palabra
+
+    def decodificar_por_sindrome(self, sind):
+        """
+        Devuelve la palabra de menor peso con síndrome sind.
+
+        Aplica el algoritmo de Patterson.
+        """
+        g = self._pol_generador
+        x = g.parent().gen()
+        L = self._conjunto
+        palabra = vector([0]*(len(L)))
+        F = g.base_ring()
+        m = len(vector(L[0]))
+        
+        # 1. Calculamos polinomio síndrome a partir del síndrome.
+        coefs = list(F(sind[i:i+m]) for i in range(0,len(sind),m))
+        pol_sind = sum([coefs[i]*x**(len(coefs)-i-1) for i in range(len(coefs))])
+ 
+        # 2. Calculamos el inverso del polinomio síndrome.
+        T = _invertir(pol_sind, g)
+        
+        # 3.a. Si T(x)=x, el polinomio localizador de errores es x.
+        if T == x:
+            sigma = x
+        else:
+            # 3.b. Si T(x)!=x, calculamos la raíz cuadrada de T(x)+x.
+            tau = _sqrt(T+x, g)
+
+            # 4. Calculamos alpha(x) y beta(x).
+            (alpha, beta, v) = _xgcd_grado_acotado(tau, g)
+
+            # 5. Obtenemos el polinomio localizador de errores sigma(x).
+            sigma = alpha**2 + x*beta**2
+        
+        # 6. Las raíces de sigma(x) indican las posiciones no nulas.
+        for i in range(len(L)):
+            if sigma(L[i]) == 0:
+                palabra[i] = 1
+        
+        return palabra
         
